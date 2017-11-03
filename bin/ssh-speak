@@ -1,0 +1,52 @@
+#!/usr/bin/env ruby
+
+require 'net/ssh'
+require 'readline'
+require 'io/console'
+
+abort 'Please supply ssh server argument in form of: 
+`user@host:port` (port is optional)' if ARGV.size.zero?
+
+prompt = '(talk)> '
+
+user, _ = ARGV[0].split '@'
+location = ARGV[0].split ':'
+_, host = location[0].split '@'
+port = location[-1].to_i if location.size > 1
+port = 22 if port.nil?
+playback = ARGV.include? '--playback'
+
+print 'Password: '
+pass = STDIN.noecho(&:gets).chomp
+print "\rAttempting to connect..."
+begin
+  Net::SSH.start(
+    host, user,
+    :port => port,
+    :password => pass
+  ) { |ssh| ssh.exec! '' }
+  print "\rSuccessfully connected to host."
+rescue Errno::ECONNREFUSED
+  print "\rCould not connect! Check username, hostname, port, etc."
+end
+
+puts "\r"
+what = String.new
+until what == "\0"
+  trap 'SIGINT' do 
+    puts "\nUse EOF character to exit (Ctrl+D)"
+    print prompt
+  end
+  what = Readline.readline prompt, true
+  break if what.nil? || what.downcase.strip == 'exit'
+
+  Net::SSH.start host, user, :port => port, :password => pass do |ssh|
+    say = "espeak \"#{what}\""
+
+    %x{ #{say} >/dev/null 2>&1 & } if playback
+    ssh.exec! say
+  end
+end
+
+puts "\rTalker disconnected and exited."
+
