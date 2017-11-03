@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'ssh_speak'
-  s.version     = '0.1.0'
+  s.version     = '0.1.1'
   s.required_ruby_version = '>= 2.0.0'
   s.executables << 'ssh-speak'
   s.date        = Time.now.to_s.split(/\s/)[0]
@@ -11,6 +11,7 @@ Gem::Specification.new do |s|
   s.files       = Dir.glob("{bin,lib}/**/*") + %w(LICENSE README.md)
   s.require_path= 'lib'
   s.homepage    = 'https://github.com/Demonstrandum/ssh_speak'
+  s.add_dependency 'net-ssh', '~> 4.2', '>= 4.2.0'
   s.license     = 'BSD-2-Clause'
 end
 
