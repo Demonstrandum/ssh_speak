@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'ssh_speak'
-  s.version     = '0.1.1'
+  s.version     = '0.1.2'
   s.required_ruby_version = '>= 2.0.0'
   s.executables << 'ssh-speak'
   s.date        = Time.now.to_s.split(/\s/)[0]

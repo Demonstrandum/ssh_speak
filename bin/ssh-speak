@@ -5,16 +5,15 @@ require 'readline'
 require 'io/console'
 
 abort 'Please supply ssh server argument in form of: 
-`user@host:port` (port is optional)' if ARGV.size.zero?
+`user@host:port` (port is optional, default 22)' if ARGV.size.zero?
 
 prompt = '(talk)> '
 
 user, _ = ARGV[0].split '@'
-location = ARGV[0].split ':'
-_, host = location[0].split '@'
-port = location[-1].to_i if location.size > 1
+server  = ARGV[0].split ':'
+_, host = server[0].split '@'
+port = server[-1].to_i if server.size > 1
 port = 22 if port.nil?
-playback = ARGV.include? '--playback'
 
 print 'Password: '
 pass = STDIN.noecho(&:gets).chomp
@@ -28,25 +27,32 @@ begin
   print "\rSuccessfully connected to host."
 rescue Errno::ECONNREFUSED
   print "\rCould not connect! Check username, hostname, port, etc."
+server  = ARGV[0].split ':'
+  exit 1
 end
+
+playback = ARGV.include? '--playback'
+wait = ARGV.include? '--wait'
+options = ARGV.index('-o') ? ARGV[(ARGV.index('-o') + 1)..-1].join(' ') : ''
 
 puts "\r"
 what = String.new
-until what == "\0"
-  trap 'SIGINT' do 
-    puts "\nUse EOF character to exit (Ctrl+D)"
-    print prompt
-  end
-  what = Readline.readline prompt, true
-  break if what.nil? || what.downcase.strip == 'exit'
 
-  Net::SSH.start host, user, :port => port, :password => pass do |ssh|
-    say = "espeak \"#{what}\""
+Net::SSH.start host, user, :port => port, :password => pass do |ssh|
+  until what == "\0"
+    trap 'SIGINT' do 
+      puts "\nUse EOF character to exit (Ctrl+D)"
+      print prompt
+    end
 
+    what = Readline.readline prompt, true
+    break if what.nil? || what.downcase.strip == 'exit'
+
+    say = "espeak #{options} \"#{what}\""
     %x{ #{say} >/dev/null 2>&1 & } if playback
-    ssh.exec! say
+    ssh.exec! wait ? say : "sh -c 'nohup #{say} > /dev/null 2>&1 &'"
   end
 end
 
-puts "\rTalker disconnected and exited."
+puts "\rSSH Speaker disconnected and exited."
 
